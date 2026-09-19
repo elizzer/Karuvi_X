@@ -4,6 +4,9 @@
 
 #include <stdint.h>
 #include "kx_hal_types.h"
+#include "esp_timer.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 
 typedef uint8_t Kx_GpioPin;
 
@@ -35,18 +38,40 @@ typedef enum Kx_GpioOperation {
     KX_GPIO_OP_TOGGLE,
 } Kx_GpioOperation_t;
 
+
+typedef enum {
+    KX_GPIO_INTR_DISABLE = 0,     /*!< Disable GPIO interrupt                             */
+    KX_GPIO_INTR_POSEDGE = 1,     /*!< GPIO interrupt type : rising edge                  */
+    KX_GPIO_INTR_NEGEDGE = 2,     /*!< GPIO interrupt type : falling edge                 */
+    KX_GPIO_INTR_ANYEDGE = 3,     /*!< GPIO interrupt type : both rising and falling edge */
+    KX_GPIO_INTR_LOW_LEVEL = 4,   /*!< GPIO interrupt type : input low level trigger      */
+    KX_GPIO_INTR_HIGH_LEVEL = 5,  /*!< GPIO interrupt type : input high level trigger     */
+    KX_GPIO_INTR_MAX,
+} Kx_GpioEvent_t;
+
+typedef void (*gpio_intr_cb_fp)(uint32_t pin,TickType_t time); 
+
+typedef struct{
+    gpio_intr_cb_fp app_intr_cb;
+} kx_GpioConfig_t;
+
 Kx_ErrorCode KxGpio_Init();
 Kx_ErrorCode KxGpio_DeInit();
+Kx_ErrorCode KxGpio_register_intr_cb(gpio_intr_cb_fp);
 Kx_ErrorCode KxGpio_SetDirection(Kx_GpioPin,Kx_GpioDirection_t);
 Kx_ErrorCode KxGpio_SetPull(Kx_GpioPin,Kx_GpioPull_t);
 Kx_ErrorCode KxGpio_Set(Kx_GpioPin);
 Kx_ErrorCode KxGpio_Clear(Kx_GpioPin);
 Kx_ErrorCode KxGpio_Read(Kx_GpioPin, Kx_GpioState_t*);
+Kx_ErrorCode KxGpio_clear_intr(Kx_GpioPin pin);
+Kx_ErrorCode KxGpio_set_intr(Kx_GpioPin pin, Kx_GpioEvent_t trig_type);
+Kx_ErrorCode KxGpio_get_intr(Kx_GpioPin pin, Kx_GpioEvent_t *trig_type);
 
 //register intrupt
 //enable intrrupt
 //disable intrrupt
 //un reigstser intrrupt
+
 
 
 #endif //KX_GPIO_HAL_H
