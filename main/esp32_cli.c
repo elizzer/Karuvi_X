@@ -5,13 +5,12 @@
 #include <inttypes.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
+#include <freertos/semphr.h>
 #include "driver/uart.h"
 #define LOG_TAG "cli"
 #include "cli_log.h"
 #include "cmd_parser.h"
 #include "cli_app.h"
-
-
 
 // create and array to hold command history
 char command_history[10][128];
@@ -54,6 +53,13 @@ int readline(char *buf, size_t max_len)
             printf("%c", ch);
             fflush(stdout);
         }
+        else if (ch == '\x1b')
+        {
+            idx = 0;
+            buf[idx] = '\0';
+            printf("\r\x1b[1C\x1b[K"); // col 0 -> move right 1 -> clear to end of line
+            fflush(stdout);
+        }
         // handle command history
         else if (ch == 0x1B)
         {
@@ -82,7 +88,6 @@ int readline(char *buf, size_t max_len)
     }
 
     buf[idx] = '\0'; // null terminate
-    printf("\r\n");
     // add command to history
     if (idx > 0)
     {
@@ -92,7 +97,26 @@ int readline(char *buf, size_t max_len)
     return idx; // return length of input
 }
 
+void cli_uart_read(void *pv)
+{
+    char input[128] = {0};
+    while (1)
+    {
+        printf("\n\r> ");
+        fflush(stdout);
+        readline(input, sizeof(input));
 
+        cli_cmd_t req = {0};
+        strncpy(req.cmd, input, sizeof(req.cmd) - 1);
+        req.source = CMD_SRC_UART;
+        req.caller = xTaskGetCurrentTaskHandle();
+
+        xQueueSend(cmd_queue_q, &req, portMAX_DELAY);
+        ulTaskNotifyTake(pdTRUE, portMAX_DELAY);  // blocks until THIS command is done
+
+        memset(input, 0, sizeof(input));
+    }
+}
 
 void app_main(void)
 {
@@ -101,18 +125,15 @@ void app_main(void)
 
     LOG_INFO("ESP32 CLI started");
     cmd_print_banner(NULL, NULL);
-    char input[128] = {0};
+
     app_init(); // initialize app commands and state
-    int8_t status;
-    while (1)
-    {
-        printf("\r\n> ");
-        fflush(stdout);
-        readline(input, sizeof(input));
 
-        main_cmd_dispatch(input);
+    // start the cli_app task
+    TaskHandle_t cli_app_task;
+    xTaskCreate(cli_app, "cli_app_task", 2048 * 5, NULL, 0, &cli_app_task);
 
-        // clear input buffers
-        memset(input, 0, sizeof(input));
-    }
+    // start the cli_uart_read task
+    TaskHandle_t cli_uart_read_task;
+    xTaskCreate(cli_uart_read, "cli_uart_read_task", 1024*3, NULL, 1, &cli_uart_read_task);
+
 }
