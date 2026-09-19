@@ -9,7 +9,7 @@
 #include "kx_hal_types.h"
 #include "kx_gpio_hal.h"
 
-// define a struct to have a configs needed to operate a single gpio
+
 
 typedef struct
 {
@@ -17,7 +17,13 @@ typedef struct
     Kx_GpioDirection_t dir; // GPIO mode (input, output, etc.) 0=>output 1=>input
     Kx_GpioPull_t pull;     // Pull-up/pull-down configuration 0=> no_pull 1=>pull_up 2=>pull_down
     Kx_GpioState_t level;   // Output level (0 or 1)
+    Kx_GpioEvent_t trigger;
 } gpioconfig_t;
+
+typedef struct{
+    uint32_t pin;
+    TickType_t time;
+}gpioTriggerQueueMember_t;
 
 typedef gpioconfig_t *gpioHandle_t;
 // define gpio specific commands function pairs
@@ -37,5 +43,7 @@ int8_t cli_gpio_clear(void *handle, char *args);
 int8_t cli_gpio_set(void *handle, char *args);
 int8_t cli_gpio_toggle(void *handle, char *args);
 int8_t cli_gpio_read(void *handle, char *args);
+int8_t cli_gpio_set_trigger(void *handle, char *args);
+int8_t cli_gpio_clear_trigger(void *handle, char *args);
 
 #endif // CLI_GPIO_H
