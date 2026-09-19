@@ -137,11 +137,20 @@ Kx_ErrorCode i2c_alloc_instance(KxI2C_Handle_t *handle, int8_t instance)
 
 Kx_ErrorCode KxI2C_free_instance(KxI2C_Handle_t handle)
 {
+    if (handle == NULL)
+    {
+        return KX_HAL_ERR_INVALID_ARG;
+    }
     return KX_HAL_OK;
 }
 
 Kx_ErrorCode KxI2C_set_device_mode(KxI2C_Handle_t handle, KxI2C_Mode_t mode)
 {
+
+    if (handle == NULL)
+    {
+        return KX_HAL_ERR_INVALID_ARG;
+    }
 
     printf("Setting I2C device mode to %s\n", KX_I2C_MODE_MASTER == mode ? "master" : "slave");
     if (KX_I2C_MODE_MASTER == mode)
@@ -160,7 +169,10 @@ Kx_ErrorCode KxI2C_set_device_mode(KxI2C_Handle_t handle, KxI2C_Mode_t mode)
 
 Kx_ErrorCode KxI2C_set_speed(KxI2C_Handle_t handle, KxI2C_Speed_t speed)
 {
-
+    if (handle == NULL)
+    {
+        return KX_HAL_ERR_INVALID_ARG;
+    }
     i2c_dev_t *t_dev = I2C_LL_GET_HW(handle->instance);
 
     i2c_hal_clk_config_t clk_cfg = {0};
@@ -248,7 +260,7 @@ Kx_ErrorCode KxI2C_set_sda(KxI2C_Handle_t handle, Kx_IO sda)
 
     if (handle == NULL)
     {
-        return KX_HAL_ERR_FAIL;
+        return KX_HAL_ERR_INVALID_ARG;
     }
 
     gpio_dev_t *gpio = GPIO_LL_GET_HW(0);
@@ -271,7 +283,7 @@ Kx_ErrorCode KxI2C_set_scl(KxI2C_Handle_t handle, Kx_IO scl)
 {
     if (handle == NULL)
     {
-        return KX_HAL_ERR_FAIL;
+        return KX_HAL_ERR_INVALID_ARG;
     }
 
     gpio_dev_t *gpio = GPIO_LL_GET_HW(0);
@@ -292,11 +304,19 @@ Kx_ErrorCode KxI2C_set_scl(KxI2C_Handle_t handle, Kx_IO scl)
 
 Kx_ErrorCode KxI2C_set_slave_addr(KxI2C_Handle_t handle, KxI2C_AddrMode_t addr_mode, uint16_t addr)
 {
+    if (handle == NULL)
+    {
+        return KX_HAL_ERR_INVALID_ARG;
+    }
     return KX_HAL_OK;
 }
 
 Kx_ErrorCode KxI2C_probe(KxI2C_Handle_t handle, uint16_t addr)
 {
+    if (handle == NULL)
+    {
+        return KX_HAL_ERR_INVALID_ARG;
+    }
     // send a start condition, send the address with write bit, and check for ack
     i2c_dev_t *t_dev = I2C_LL_GET_HW(handle->instance);
 
@@ -357,6 +377,10 @@ Kx_ErrorCode KxI2C_probe(KxI2C_Handle_t handle, uint16_t addr)
 
 Kx_ErrorCode KxI2C_master_read(KxI2C_Handle_t handle, uint16_t s_addr, uint8_t *data, size_t length)
 {
+    if (handle == NULL)
+    {
+        return KX_HAL_ERR_INVALID_ARG;
+    }
     i2c_dev_t *t_dev = I2C_LL_GET_HW(handle->instance);
 
     // reset the fifo before reading
@@ -447,6 +471,10 @@ Kx_ErrorCode KxI2C_master_read(KxI2C_Handle_t handle, uint16_t s_addr, uint8_t *
 }
 Kx_ErrorCode KxI2C_master_write(KxI2C_Handle_t handle, uint16_t s_addr, uint8_t *data, size_t length)
 {
+    if (handle == NULL)
+    {
+        return KX_HAL_ERR_INVALID_ARG;
+    }
     // put the data into the fifo and start the transfer
     i2c_dev_t *t_dev = I2C_LL_GET_HW(handle->instance);
 
