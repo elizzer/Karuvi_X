@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include "cmd_parser.h"
+#include "cli_log.h"
 
 int8_t cmd_dispatch(const char *cmd, cmdEntry_t *cmd_table, int table_size)
 {
@@ -10,7 +11,7 @@ int8_t cmd_dispatch(const char *cmd, cmdEntry_t *cmd_table, int table_size)
     int8_t cb_idx = cmd_tbl_search(key, cmd_table, table_size);
     if (cb_idx != -1)
     {
-        cmd_table[cb_idx].func(NULL,args);
+        cmd_table[cb_idx].func(NULL, args);
         return 0;
     }
     return -1;
@@ -58,3 +59,33 @@ int8_t cmd_parse(const char *cmd, char *key, size_t key_size, char *args, size_t
 
     return 0;
 }
+
+int8_t cmd_query_option(const char *cmd, const char *key, char *value)
+{
+    char buf[128];
+    strncpy(buf, cmd, sizeof(buf) - 1);
+    buf[sizeof(buf) - 1] = '\0';
+
+    char *key_p = strstr(buf, key);
+    if (key_p == NULL) return -1;
+
+    char *option = strtok(key_p, " ");
+    char *option_key = strtok(option, "=");
+    char *option_value = strtok(NULL, "=");
+
+    printf("\n\r%s:%s", option_key, option_value ? option_value : "(null)");
+    return 0;
+}
+
+bool cmd_query_flag(const char *cmd, const char *flag)
+{
+    if (flag == NULL) return false;
+    if(strstr(flag,"--")==NULL){
+        LOG_ERR("Invalid flag is given to search");
+        return false;
+    }
+    char *f = strstr(cmd, flag);
+    return (f != NULL);
+}
+
+// use gp --deamon

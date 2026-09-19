@@ -26,7 +26,7 @@
 #define CLI_LOG_PROC() (pcTaskGetName(NULL))
 
 #define LOG_LEVEL(level, fmt, ...) \
-    printf("%s[%s]: " level ": " fmt "\r\n", LOG_TAG, CLI_LOG_PROC(), ##__VA_ARGS__)
+    printf("\n\r%s[%s]: " level ": " fmt, LOG_TAG, CLI_LOG_PROC(), ##__VA_ARGS__)
 
 #define LOG_ERR(fmt, ...)   LOG_LEVEL("err",   fmt, ##__VA_ARGS__)
 #define LOG_WARN(fmt, ...)  LOG_LEVEL("warn",  fmt, ##__VA_ARGS__)
