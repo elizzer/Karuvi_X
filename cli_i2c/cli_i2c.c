@@ -58,13 +58,13 @@ int8_t cli_i2c_register()
 
 int8_t cli_i2c_init(void **handle)
 {
-    if (*handle == NULL)
+    // create a hanlde, and set default values
+    cliI2CHandle_t i2c = (cliI2CHandle_t)malloc(sizeof(cliI2CConfig_t));
+    if (i2c == NULL)
     {
         LOG_ERR("Failed to allocate memory for I2C handle");
         return KX_HAL_ERR_FAIL;
     }
-    // create a hanlde, and set default values
-    cliI2CHandle_t i2c = (cliI2CHandle_t)malloc(sizeof(cliI2CConfig_t));
     memset(i2c, 0, sizeof(cliI2CConfig_t));
     i2c->sda_pin = -1;                  // assuming -1 is an invalid pin
     i2c->scl_pin = -1;                  // assuming -1 is an invalid pin
@@ -207,8 +207,18 @@ int8_t cli_i2c_set_mode(void *handle, char *args)
         return KX_HAL_ERR_INVALID_ARG;
     }
     // call the hal function to set the mode from hal
-    KxI2C_set_device_mode(i2c_handle->hal_handle, i2c_handle->mode);
-    return KX_HAL_OK;
+    Kx_ErrorCode status;
+    status = KxI2C_set_device_mode(i2c_handle->hal_handle, i2c_handle->mode);
+    if (status == KX_HAL_OK)
+    {
+        return KX_HAL_OK;
+    }
+    else if (status == KX_HAL_ERR_INVALID_ARG)
+    {
+        LOG_ERR("Something is wrong with the args");
+    }
+
+    return KX_HAL_ERR_FAIL;
 }
 
 int8_t cli_i2c_set_speed(void *handle, char *args)
