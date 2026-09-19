@@ -10,6 +10,7 @@
 #include "esp_err.h"
 #include "esp_chip_info.h"
 #include "esp_timer.h"
+#include <freertos/task.h>
 
 // global variable to store current mode
 
@@ -30,8 +31,12 @@ cmdEntry_t g_cmd_table[] = {
     {"", NULL, "", ""},
 };
 
+
+QueueHandle_t cmd_queue_q;
+
 void app_init(void)
 {
+    cmd_queue_q = xQueueCreate(3, sizeof(cli_cmd_t));
     cli_gpio_register();
     cli_pwm_register();
     cli_i2c_register();
@@ -122,7 +127,7 @@ void cmd_use(void *handle, char *args)
     int8_t indx = get_interface_handle(name);
     if (indx == -1)
     {
-        LOG_ERR("no interface found with name '%s'", name);
+        LOG_ERR("\n\rno interface found with name '%s'", name);
         return;
     }
 
@@ -130,7 +135,7 @@ void cmd_use(void *handle, char *args)
 
     if (inf_entry == NULL)
     {
-        LOG_ERR("interface '%s' not found in registry", name);
+        LOG_ERR("\n\rinterface '%s' not found in registry", name);
         return;
     }
 
@@ -158,7 +163,7 @@ void cmd_time(void *handle, char *args)
     int64_t us = esp_timer_get_time();
     int64_t seconds = us / 1000000;
     int64_t micros = us % 1000000;
-    printf("Uptime: %lld.%06lld seconds\r\n", (long long)seconds, (long long)micros);
+    printf("\n\rUptime: %lld.%06lld seconds\r\n", (long long)seconds, (long long)micros);
 }
 
 void cmd_sysinfo(void *handle, char *args)
@@ -166,6 +171,7 @@ void cmd_sysinfo(void *handle, char *args)
     esp_chip_info_t chip_info;
     esp_chip_info(&chip_info);
 
+    printf("\n\r");
     printf("Chip model: %s\r\n", chip_info.model == CHIP_ESP32S3 ? "ESP32-S3" : "Unknown");
     printf("Cores: %d\r\n", chip_info.cores);
     printf("Revision: %d\r\n", chip_info.revision);
@@ -227,11 +233,29 @@ void cmd_help(void *handle, char *args)
     printf("-----------------------------\r\n");
 }
 
-void main_cmd_dispatch(const char * cmd)
+void main_cmd_dispatch(const char *cmd)
 {
     uint8_t status = cmd_dispatch(cmd, g_cmd_table, sizeof(g_cmd_table) / sizeof(cmdEntry_t));
     if (status == -1)
     {
         LOG_ERR("Unknown command :%s", cmd);
+    }
+}
+
+// this is
+void cli_app(void *pv)
+{
+    cli_cmd_t req;
+    while (1)
+    {
+        if (xQueueReceive(cmd_queue_q, &req, portMAX_DELAY) == pdTRUE)
+        {
+            main_cmd_dispatch(req.cmd);
+
+            if (req.caller != NULL) {
+                xTaskNotifyGive(req.caller);
+            }
+            // caller == NULL means nobody's waiting — internal/fire-and-forget trigger
+        }
     }
 }

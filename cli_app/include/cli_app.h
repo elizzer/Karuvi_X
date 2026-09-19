@@ -5,6 +5,9 @@
 #include <string.h>
 #include "cmd_parser.h"
 #include "interface_registry.h"
+#include <freertos/FreeRTOS.h>
+#include <freertos/queue.h>
+
 
 // struct to hold name agains handle
 typedef struct
@@ -15,8 +18,25 @@ typedef struct
     InterfaceId_e inf;
 } interface_instance_t;
 
+typedef enum {
+    CMD_SRC_UART,
+    CMD_SRC_USB,
+    CMD_SRC_INTERNAL,   // watch triggers, I2C slave auto-respond, etc.
+} cli_cmd_source_t;
+
+typedef struct {
+    char cmd[128];
+    cli_cmd_source_t source;
+    TaskHandle_t caller;     // NULL if fire-and-forget (see below)
+} cli_cmd_t;
+
+
 extern cmdEntry_t g_cmd_table[];
 
+extern QueueHandle_t cmd_queue_q;
+
+
+void cli_app(void *);
 void main_cmd_dispatch(const char * cmd);
 
 void cmd_help(void *,char *args);
